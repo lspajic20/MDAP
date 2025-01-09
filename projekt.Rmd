@@ -1,0 +1,287 @@
+---
+title: "seminarski"
+output: html_document
+date: "2024-04-27"
+---
+
+
+
+```{r}
+# Učitavanje biblioteke za rad s podacima
+
+library(readxl)
+library(psych)
+library(corrplot) 
+library(PerformanceAnalytics)
+library(corrplot)
+library(lattice)
+library(ggplot2)
+library(MASS)
+library(car)
+```
+
+```{r}
+# Ovaj dio koda učitava skup podataka automobila iz datoteke "automobili.csv" i prikazuje prvih nekoliko redova, dimenzije i imena stupaca skupa podataka.
+automobili <- read.csv("C:/Users/FOI/Downloads/automobili.csv")
+
+head(automobili)
+
+dim(automobili)
+
+names(automobili)
+
+sapply(automobili, class)
+
+```
+  
+  
+```{r}
+# Ovaj dio koda daje sažetak statističkih podataka za skup podataka automobila, kao što su srednja vrijednost, medijan, min/max vrijednosti itd., te detaljniji opis za odabrane varijable.
+
+summary(automobili)
+
+describe(automobili[c("normalized.losses", "wheel.base", "horsepower", "price")], 
+         check = FALSE)
+
+```
+
+```{r}
+# Ovdje se provjerava prisutnost nevažećih vrijednosti za odabrane varijable u skupu podataka. Zatim se provodi čišćenje nevažećih vrijednosti pretvaranjem odabranih varijabli iz karakterne u numeričku vrstu.
+
+sum(is.na(automobili$normalized.losses))
+sum(is.na(automobili$horsepower))
+sum(is.na(automobili$price))
+
+
+automobili$normalized.losses <- as.numeric(as.character(automobili$normalized.losses))
+automobili$horsepower <- as.numeric(as.character(automobili$horsepower))
+automobili$price <- as.numeric(as.character(automobili$price))
+
+
+str(automobili$normalized.losses)
+str(automobili$horsepower)
+str(automobili$price)
+
+```
+
+```{r}
+# Ovdje se prikazuju histogrami za odabrane varijable u skupu podataka: Normalizirani gubici, Baza kotača, Snaga motora i Cijena.
+
+par(mfrow=c(2,2))
+hist(automobili$normalized.losses, main = "Normalized Losses", xlab = "Normalized Losses", col = "lightblue")
+hist(automobili$wheel.base, main = "Wheel Base", xlab = "Wheel Base", col = "lightblue")
+hist(automobili$horsepower, main = "Horsepower", xlab = "Horsepower", col = "lightblue")
+hist(automobili$price, main = "Price", xlab = "Price", col = "lightblue")
+par(mfrow=c(1,1))
+
+```
+
+```{r}
+# Ovdje se prikazuju kutijasti dijagrami za odabrane varijable grupirane prema marki automobila: Normalizirani gubici, Baza kotača, Snaga motora i Cijena.
+
+par(mfrow=c(2,2))
+boxplot(normalized.losses ~ make, data = automobili, main = "Normalized Losses by Make", col = "lightblue")
+boxplot(wheel.base ~ make, data = automobili, main = "Wheel Base by Make", col = "lightblue")
+boxplot(horsepower ~ make, data = automobili, main = "Horsepower by Make", col = "lightblue")
+boxplot(price ~ make, data = automobili, main = "Price by Make", col = "lightblue")
+par(mfrow=c(1,1))
+
+```
+
+```{r}
+# Ovdje se prikazuje raspršeni dijagram za Bazu kotača i Cijenu automobila.
+
+plot(automobili$wheel.base, automobili$price, xlab = "Wheel Base", ylab = "Price", main = "Scatterplot: Wheel Base vs. Price")
+
+```
+
+```{r}
+# Ovdje se prikazuje matrica raspršenih dijagrama za Normalizirane gubitke, Bazu kotača, Snagu motora i Cijenu automobila.
+
+pairs(~normalized.losses + wheel.base + horsepower + price, data = automobili, main = "Scatterplot Matrix")
+
+```
+
+
+
+
+```{r}
+
+
+hist(automobili$lenght, main = "Length", xlab = "Length", col = "lightblue")
+
+
+plot(automobili$compression.ratio, automobili$horsepower, xlab = "Compression Ratio", ylab = "Horsepower", main = "Scatterplot: Compression Ratio vs. Horsepower")
+
+
+
+plot(density(na.omit(automobili$price)), main = "Density Plot: Price", xlab = "Price", col = "lightblue")
+
+
+
+plot(automobili$highway.mpg, automobili$lenght, xlab = "Highway MPG", ylab = "Length", main = "Scatterplot: Highway MPG vs. Length")
+
+
+
+boxplot(automobili$highway.mpg, main = "Boxplot: Highway MPG", col = "lightblue")
+
+
+
+
+aspiration_count <- table(automobili$aspiration)
+
+pie(aspiration_count, main = "Pie Chart: Engine Aspiration", col = rainbow(length(aspiration_count)))
+
+legend("topright", names(aspiration_count), fill = rainbow(length(aspiration_count)), cex = 0.8)
+
+
+
+# Izračunajte broj pojavljivanja svake marke automobila
+marca_frekvencija <- table(automobili$make)
+
+# Stvorite pie chart
+pie(marca_frekvencija, main = "Frekvencija Marke Automobila")
+
+# Dodajte legendu
+legend("topright", names(marca_frekvencija), fill = rainbow(length(marca_frekvencija)), cex = 0.8)
+
+
+
+
+body_style_frequencies <- table(automobili$body.style)
+
+pie(body_style_frequencies, main = "Frekvencija Stila Karoserije")
+
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+automobili <- na.omit(automobili)
+head(automobili)
+```
+
+```{r}
+# Postavljanje grafičkih parametara kako bi se izbjegla upozorenja
+par(mfrow=c(1,1))  # Resetiranje broja redaka i stupaca u grafikonu
+
+# Izračunavanje matrice korelacije
+correlation_matrix <- cor(automobili[c("normalized.losses", "wheel.base", "horsepower", "price")])
+
+# Prikaz korelacije uz histogram
+chart.Correlation(automobili[c("normalized.losses", "wheel.base", "horsepower", "price")], histogram=TRUE, pch=16, method="pearson")
+
+# Prikaz matrice korelacije pomoću corrplot funkcije
+corrplot(correlation_matrix, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45, sig.level = 0.01)
+
+
+```
+
+
+
+
+## Chi-Squared Test
+```{r chi_squared_test}
+# Create a contingency table
+contingency_table <- table(automobili$fuel.type, automobili$aspiration)
+
+# Perform chi-squared test
+chi_squared_result <- chisq.test(contingency_table, correct = TRUE)
+chi_squared_result
+```
+
+
+## Visualization
+```{r visualization}
+# Convert contingency table to data frame for plotting
+contingency_df <- as.data.frame.table(contingency_table)
+
+# Rename columns
+names(contingency_df) <- c("Fuel Type", "Aspiration", "Frequency")
+
+# Create bar plot
+library(ggplot2)
+ggplot(contingency_df, aes(x = `Fuel Type`, y = Frequency, fill = Aspiration)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Association between Fuel Type and Aspiration",
+       x = "Fuel Type",
+       y = "Frequency") +
+  theme_minimal()
+
+
+```
+
+## Linearna regresija
+
+
+
+
+
+```{r}
+# Identifikacija varijabli s jednim nivoom
+single_level_vars <- sapply(automobili, function(x) length(unique(x)) == 1)
+single_level_vars
+
+# Prikaz varijabli s jednim nivoom
+names(single_level_vars[single_level_vars == TRUE])
+
+```
+
+```{r}
+# Uklanjanje varijabli s jednim nivoom
+automobili <- automobili[, !single_level_vars]
+
+```
+
+
+
+```{r}
+# Izračunavanje matrice korelacije za preostale numeričke varijable
+extended_correlation_matrix <- cor(automobili[, sapply(automobili, is.numeric)], use="complete.obs")
+extended_correlation_matrix
+
+# Prikaz proširene korelacijske matrice
+corrplot(extended_correlation_matrix, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+
+
+```
+
+```{r}
+# Definiranje početnog modela sa svim preostalim varijablama
+full_model <- lm(price ~ ., data = automobili)
+
+# Korištenje stepAIC funkcije za odabir varijabli
+library(MASS)
+stepwise_model <- stepAIC(full_model, direction = "both")
+
+# Prikaz rezultata modela nakon stepwise regresije
+summary(stepwise_model)
+
+```
+
+```{r}
+# Kreiranje konačnog modela s odabranim varijablama
+final_model <- lm(price ~ normalized.losses + wheel.base + horsepower + curb.weight, data = automobili)
+summary(final_model)
+
+```
+
+```{r}
+# Dijagnostički grafovi za konačni model
+par(mfrow=c(2,2))
+plot(final_model)
+par(mfrow=c(1,1))
+
+# Provjera multikolinearnosti
+vif(final_model)
+
+```
+
